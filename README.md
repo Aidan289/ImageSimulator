@@ -7,7 +7,9 @@ using the GalSim python package, as presented in the manuscript ["FORECASTOR -- 
 with CASTOR"](https://ui.adsabs.harvard.edu/abs/2024arXiv240217163M/abstract). Also included are the scripts used to make comparison images 
 for LSST and GALEX.
 
-These codes are also hosted on [CANFAR](https://www.canfar.net/en/), for ease of use. The code is designed to be used with simulated light-cones 
+This repository also includes *preliminary* estimates for the CASTOR bandpasses and PSFs, for use in these simulations.
+
+These codes and files are also hosted on [CANFAR](https://www.canfar.net/en/), for ease of use. The code is designed to be used with simulated light-cones 
 from the Santa Cruz Semi-Analytic Model, which are proprietry and not publicly available. The mock lightcones are available on CANFAR for members of the CASTOR 
 team for the sole purpose of creating simulated images for CASTOR science planning. These codes can be adapted for use with other lightcones/input galaxy catalogues, 
 for those external to the CASTOR team. 
