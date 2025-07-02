@@ -358,7 +358,7 @@ def main(filter, user_t_exp, pixel_scale, dust=True, noise=True, catalogue_path=
                     #  Save postage stamp of galaxy to the field image
                     image[t_exp][bounds] += stamp[bounds]
 
-        if nfolder == 0: break  # used for testing, if only want to use first few redshift bins
+        #if nfolder == 0: break  # used for testing, if only want to use first few redshift bins
         nfolder += 1
 
     dt=get_datetime()#include datetime of creation in filename to make sure files arent overwritten
