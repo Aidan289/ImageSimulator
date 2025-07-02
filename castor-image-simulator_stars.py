@@ -4,6 +4,7 @@ import logging
 import galsim
 import copy
 import numpy as np
+from datetime import datetime
 from astropy.table import Table, vstack
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -39,7 +40,7 @@ def uJy2galflux(uJy, wavelengths, response):
     wavelengths = (wavelengths * u.um).to(u.m)
     # The galaxy flux is throughput * luminous density in photon/cm^2/s/Hz * nu_del integrated over nu (frequency)
     flux = simpson(y=response * (uJy * u.uJy).to(u.photon / u.cm ** 2 / u.s / u.Hz, equivalencies=
-    u.spectral_density(wavelengths)).value * c_light / (wavelengths ** 2), x=wavelengths, even="avg")
+    u.spectral_density(wavelengths)).value * c_light / (wavelengths ** 2), x=wavelengths)
 
     return flux
 
@@ -56,8 +57,8 @@ def effwave(wavelengths, response):
         Assumes AB magnitude standard.
         Formula from <ADD LINK> Koornneef et al. 1986'''
 
-    numer = simpson(y=wavelengths * wavelengths * response, x=wavelengths, even="avg")
-    denom = simpson(y=wavelengths * response, x=wavelengths, even="avg")
+    numer = simpson(y=wavelengths * wavelengths * response, x=wavelengths)
+    denom = simpson(y=wavelengths * response, x=wavelengths)
 
     eff_wav = numer / denom
 
@@ -112,6 +113,9 @@ def skynoise(band, pixel_scale):
     #  Calculate and return background in photons/s/cm^2/pixel
     return pixel_area * flux_phot
 
+def get_datetime():
+    now=datetime.now()
+    return now.strftime("%Y%m%d_%H%M%S")
 
 def main(filter, user_t_exp, pixel_scale, dust=True, noise=True, catalogue_path='', center=None, fov_name=-99):
     """ This script uses tabulated data from Aaron Yung's SAM catalogue to generate a simulated CASTOR image """
@@ -320,13 +324,15 @@ def main(filter, user_t_exp, pixel_scale, dust=True, noise=True, catalogue_path=
                 image[t_exp][bounds] += stamp[bounds]
 
 
+    dt=get_datetime()#include datetime of creation in filename to make sure files arent overwritten
+
     logger.info('Stamps complete, ' + str(count) + ' errors')
-    np.savetxt(output_messages_path+'CASTOR_RomanStarCat_2023PSFs_'+'_FOV{}_'.format(fov_name) + filter + '_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') +'FFTerrors.txt', FFTerror)
-    np.savetxt(output_messages_path+'CASTOR_RomanStarCat_2023PSFs_'+'_FOV{}_'.format(fov_name) + filter + '_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') + 'MemErrors.txt', MemError)
+    np.savetxt(output_messages_path+dt+'_CASTOR_RomanStarCat_2023PSFs_'+'_FOV{}_'.format(fov_name) + filter + '_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') +'FFTerrors.txt', FFTerror)
+    np.savetxt(output_messages_path+dt+'_CASTOR_RomanStarCat_2023PSFs_'+'_FOV{}_'.format(fov_name) + filter + '_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') + 'MemErrors.txt', MemError)
     
     for t_exp in user_t_exp:
         #  Add noise to field image and save
-        file_name1 = os.path.join(output_images_path+'CASTOR_RomanStarCat_2023PSFs_'+'_FOV{}_'.format(fov_name) + filter + '_' + str(t_exp) +'s_pixscale'+str(pixel_scale).replace('.','p') + '.fits')
+        file_name1 = os.path.join(output_images_path+dt+'_CASTOR_RomanStarCat_2023PSFs_'+'_FOV{}_'.format(fov_name) + filter + '_' + str(t_exp) +'s_pixscale'+str(pixel_scale).replace('.','p') + '.fits')
         if noise == True:
             # Calculate sky background
             #bkg = skynoise(filter, pixel_scale)

@@ -4,6 +4,7 @@ import logging
 import galsim
 import copy
 import numpy as np
+from datetime import datetime
 from astropy.table import Table, vstack
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -40,7 +41,7 @@ def uJy2galflux(uJy, wavelengths, response):
     wavelengths = (wavelengths * u.um).to(u.m)
     # The galaxy flux is throughput * luminous density in photon/cm^2/s/Hz * nu_del integrated over nu (frequency)
     flux = simpson(y=response * (uJy * u.uJy).to(u.photon / u.cm ** 2 / u.s / u.Hz, equivalencies=
-    u.spectral_density(wavelengths)).value * c_light / (wavelengths ** 2), x=wavelengths, even="avg")
+    u.spectral_density(wavelengths)).value * c_light / (wavelengths ** 2), x=wavelengths)
 
     return flux
 
@@ -57,8 +58,8 @@ def effwave(wavelengths, response):
         Assumes AB magnitude standard.
         Formula from <ADD LINK> Koornneef et al. 1986'''
 
-    numer = simpson(y=wavelengths * wavelengths * response, x=wavelengths, even="avg")
-    denom = simpson(y=wavelengths * response, x=wavelengths, even="avg")
+    numer = simpson(y=wavelengths * wavelengths * response, x=wavelengths) 
+    denom = simpson(y=wavelengths * response, x=wavelengths)
 
     eff_wav = numer / denom
 
@@ -119,6 +120,9 @@ def skynoise(band, pixel_scale):
     #  Calculate and return background in photons/s/cm^2/pixel
     return pixel_area * flux_phot
 
+def get_datetime():
+    now=datetime.now()
+    return now.strftime("%Y%m%d_%H%M%S")
 
 def main(filter, user_t_exp, pixel_scale, dust=True, noise=True, catalogue_path='',center=None,fov_name=-99):
     """ This script uses tabulated data from Aaron Yung's SAM catalogue to generate a simulated CASTOR image """
@@ -407,16 +411,18 @@ def main(filter, user_t_exp, pixel_scale, dust=True, noise=True, catalogue_path=
                     #  Save postage stamp of galaxy to the field image
                     image[t_exp][bounds] += stamp[bounds]
 
-        #if nfolder == 0: break  # used for testing, if only want to use first few redshift bins
+        if nfolder == 0: break  # used for testing, if only want to use first few redshift bins
         nfolder += 1
 
+    dt=get_datetime() #include datetime of creation in filename to make sure files arent overwritten
+
     logger.info('Stamps complete, ' + str(count) + ' errors')
-    np.savetxt(output_messages_path+'CASTOR_AaronsCat_wide{}_2023PSFs_'.format(simulation_num) +'_FOV{}_'.format(fov_name) + filter + '_UpdatedNoise_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') +'FFTerrors.txt', FFTerror)
-    np.savetxt(output_messages_path+'CASTOR_AaronsCat_wide{}_2023PSFs_'.format(simulation_num)+'_FOV{}_'.format(fov_name) + filter + '_UpdatedNoise_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') + 'MemErrors.txt', MemError)
+    np.savetxt(output_messages_path + dt+'_CASTOR_AaronsCat_wide{}_2023PSFs_'.format(simulation_num) +'_FOV{}_'.format(fov_name) + filter + '_UpdatedNoise_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') +'FFTerrors.txt', FFTerror)
+    np.savetxt(output_messages_path + dt+'_CASTOR_AaronsCat_wide{}_2023PSFs_'.format(simulation_num)+'_FOV{}_'.format(fov_name) + filter + '_UpdatedNoise_' + str(t_exp) + 's_pixscale'+str(pixel_scale).replace('.','p') + 'MemErrors.txt', MemError)
     
     for t_exp in user_t_exp:
         #  Add noise to field image and save
-        file_name1 = os.path.join(output_images_path+'CASTOR_AaronsCat_wide{}_2023PSFs_'.format(simulation_num)+'_FOV{}_'.format(fov_name) + filter + '_UpdatedNoise_' + str(t_exp) +'s_pixscale'+str(pixel_scale).replace('.','p') + '.fits')
+        file_name1 = os.path.join(output_images_path + dt+'_CASTOR_AaronsCat_wide{}_2023PSFs_'.format(simulation_num)+'_FOV{}_'.format(fov_name) + filter + '_UpdatedNoise_' + str(t_exp) +'s_pixscale'+str(pixel_scale).replace('.','p') + '.fits')
         if noise == True:
             # Calculate sky background
             bkg = skynoise(filter, pixel_scale)
@@ -442,16 +448,16 @@ if __name__=='__main__':
     
     ''' User Configuration Section '''
     # Choose image generation parameters
-    filters = ["uv", "u","uv_split_bb", "u_split_bb"]   # available: u, uv, g, uv_split_bb, u_split_bb, and
+    filters = ["u","g"]   # available: u, uv, g, uv_split_bb, u_split_bb, and
     # g - doing separately as has different exposure times
-    exp_times = [1000,18000,180000]  # enter any exposure time in seconds (s)
+    exp_times = [300,900,64800]  # enter any exposure time in seconds (s)
     #exp_times = [2000,36000,360000]
     #these are for Wide, Deep and Ultra-Deep
     pixel_scale = 0.1  # arcsec/pixel
     dust = True  # specify if you want to use intrinsic or dust (observed) magnitudes
     noise = True
     #path to Aaron's catalogue
-    simulation_num = 4
+    simulation_num = 4 #simulation num. this picks which light cone??
     catalogue_path = '/arc/projects/CASTOR/Simulations/wide.{}/'.format(simulation_num)
     output_messages_path = 'OutputMessages/'
     output_images_path = 'OutputImages/'
